@@ -15,7 +15,7 @@ sEddyProc$methods(
     ## Initializes data frame sTEMP for newly generated gap filled data and qualifiers.
     Var.s                 ##<< Variable to be filled
     ,QFVar.s='none'       ##<< Quality flag of variable to be filled
-    ,QFValue.n=NA_real_   ##<< Value of quality flag for _good_ data, other data is set to missing
+    ,QFValue.n=NA_real_   ##<< Value of quality flag for _good_ (original) data, other data is set to missing
     ,FillAll.b=TRUE       ##<< Fill all values to estimate uncertainties
   )
     ##author<<
@@ -28,7 +28,7 @@ sEddyProc$methods(
     fCheckColPlausibility(sDATA, c(Var.s, QFVar.s), 'sFillInit')
     Var.V.n <- fSetQF(sDATA, Var.s, QFVar.s, QFValue.n, 'sFillInit')
     
-    # Check if variable to be filled contains any data
+    # Abort if variable to be filled contains no data
     if( sum(!is.na(Var.V.n)) == 0 ) {
       warning('sFillInit::: Variable to be filled (', Var.s, ') contains no data at all!')
       return(-111)
@@ -69,6 +69,7 @@ sEddyProc$methods(
     attr(lTEMP$VAR_f, 'units') <- attr(Var.V.n, 'units')
     attr(lTEMP$VAR_fall, 'units') <- attr(Var.V.n, 'units')
     attr(lTEMP$VAR_fsd, 'units') <- attr(Var.V.n, 'units')
+    attr(lTEMP$VAR_fwin, 'units') <- 'days'
     
     ##details<<
     ## Long gaps (larger than 60 days) are not filled.
@@ -326,7 +327,7 @@ sEddyProc$methods(
     ## MDS gap filling algorithm adapted after the PV-Wave code and paper by Markus Reichstein.
     Var.s                 ##<< Variable to be filled
     ,QFVar.s='none'       ##<< Quality flag of variable to be filled
-    ,QFValue.n=NA_real_   ##<< Value of quality flag for _good_ data, other data is set to missing
+    ,QFValue.n=NA_real_   ##<< Value of quality flag for _good_ (original) data, other data is set to missing
     ,V1.s='Rg'            ##<< Condition variable 1 (default: Global radiation 'Rg' in  W m-2)
     ,T1.n=50              ##<< Tolerance interval 1 (default: 50 W m-2)
     ,V2.s='VPD'           ##<< Condition variable 2 (default: Vapour pressure deficit 'VPD' in hPa)
@@ -348,7 +349,7 @@ sEddyProc$methods(
     ##details<<
     ## Initialize temporal data frame sTEMP for newly generated gap filled data and qualifiers, see \code{\link{sFillInit}} for explanations on suffixes.
     if ( !is.null(sFillInit(Var.s, QFVar.s, QFValue.n, FillAll.b)) )
-      return(invisible(-111)) # Do not execute gap filling if initialization of sTEMP failed
+      return(invisible(-111)) # Abort gap filling if initialization of sTEMP failed
     
     #+++ Handling of special cases of meteo condition variables V1.s, V2.s, V3.s
     # If variables are at default values but do not exist as columns, set to 'none' (=disabled identifier).
@@ -360,7 +361,7 @@ sEddyProc$methods(
     if( (V2.s ==  'VPD' && !(V2.s %in% c(colnames(sDATA)))) || (V2.s == Var.s) )   V2.s <- 'none'
     if( (V3.s == 'Tair' && !(V3.s %in% c(colnames(sDATA)))) || (V3.s == Var.s) )   V3.s <- 'none'
     
-    # Check if specified columns are numeric and plausible (with 'none' as dummy)
+    # Check if specified conditions are numeric and plausible (with 'none' as dummy)
     fCheckColNames(sDATA, c(V1.s, V2.s, V3.s), 'sMDSGapFill')
     fCheckColNum(sDATA, c(V1.s, V2.s, V3.s), 'sMDSGapFill')
     fCheckColPlausibility(sDATA, c(V1.s, V2.s, V3.s), 'sMDSGapFill')

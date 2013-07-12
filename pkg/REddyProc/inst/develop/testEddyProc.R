@@ -12,15 +12,15 @@ if (Develop.b) {
   source('inst/develop/setREnvir.R')
   
   # Source file and data handling scripts
-  source("R/DataFunctions.R")
-  source("R/FileHandling.R")
+  source('R/DataFunctions.R')
+  source('R/FileHandling.R')
   # Initialization of sEddyProc class
-  source("R/Eddy.R")
+  source('R/Eddy.R')
   # sEddyProc methods
-  source("R/EddyGapfilling.R")
-  source("R/EddyPlotting.R")
+  source('R/EddyGapfilling.R')
+  source('R/EddyPlotting.R')
   # Source geo functions
-  source("R/GeoFunctions.R")
+  source('R/GeoFunctions.R')
   # Load standard example data from file
   EddyData.F <- fLoadTXTIntoDataframe('Example_DETha98.txt','inst/examples')
 } else {
@@ -57,7 +57,7 @@ if (Develop.b) {
 
 # Data handling of standard example data
 # Add dummy quality flag for tests
-EddyData.F <- cbind(EddyData.F, QF=structure(rep(c(1,0,1,0,1,0,0,0,0,0),nrow(EddyData.F)/10), units="dummy_unit"))
+EddyData.F <- cbind(EddyData.F, QF=structure(rep(c(1,0,1,0,1,0,0,0,0,0),nrow(EddyData.F)/10), units='dummy_unit'))
 # Test calculation of VPD
 EddyData.F$VPDnew <- fCalcVPDfromRHandTair(EddyData.F$rH, EddyData.F$Tair)
 # Add POSIX time stamp
@@ -77,7 +77,7 @@ if (T==F) {
   SiteFile.V.s <- fInitFilesDir(DirFluxnet.s, 'hourly.nc')
   SiteName.V.s <- fStripFileExtension(SiteFile.V.s)
   for (Site.i in 1:length(SiteName.V.s)) {
-    message(paste('Handling site file ', Site.i, ': \"', SiteName.V.s[Site.i],'\"', sep='')) 
+    message(paste('Handling site file ', Site.i, ': \'', SiteName.V.s[Site.i],'\'', sep='')) 
     #...  
   }
   EddyBGINCData.F <- fLoadFluxNCIntoDataframe(lVar.V.s, 'DE-Tha.1996.2006.hourly.nc', DirFluxnet.s)
@@ -276,4 +276,3 @@ if (LongTest.b) {
   plot(EPTha98.C$sTEMP$NEE_f ~ EPThaNC.C$sTEMP$NEEnew_f[35089:52608], col=rgb(0.4,0.4,0.4,alpha=0.2), pch=20, cex=0.3)
   plot(MDSData.F$NEE_f ~ EPThaNC.C$sDATA$NEE_f[35089:52608], col=rgb(0.4,0.4,0.4,alpha=0.2), pch=20, cex=0.3)
 }
-

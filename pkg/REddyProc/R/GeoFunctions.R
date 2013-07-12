@@ -20,7 +20,6 @@ fConvertCtoK <- function(
   Kelvin.V.n <-  Celsius.V.n + 273.15
   attr(Kelvin.V.n, 'varnames') <- 'Temp_K'
   attr(Kelvin.V.n, 'units') <- 'degK'
-  message('Converted degree Celsius to degree Kelvin.')
   return(Kelvin.V.n)
   ##value<<
   ## Data vector in temperature Kelvin (Temp_K, degK)
@@ -38,7 +37,6 @@ fConvertKtoC <- function(
   Celsius.V.n <-  Kelvin.V.n - 273.15
   attr(Celsius.V.n, 'varnames') <- 'Temp_C'
   attr(Celsius.V.n, 'units') <- 'degC'
-  message('Converted degree Kelvin to degree Celsius.')
   return(Celsius.V.n)
   ##value<<
   ## Data vector in temperature Celsius (Temp_C, degC)
@@ -56,7 +54,6 @@ fConvertVisibleWm2toPhotons <- function(
   Photons.V.n <- 4.6 * Wm2.V.n
   attr(Vis.V.n, 'varnames') <- 'PPFD'
   attr(Vis.V.n, 'units') <- 'umol_m-2_s-1'
-  message('Converted units of visible radiation from irradiance to photons flux.')
   return(Photons.V.n)
   ##value<<
   ## Data vector in units of photons flux (PPFD, umol photons m-2 s-1)
@@ -74,7 +71,6 @@ fConvertGlobalToVisible <- function(
   Vis.V.n <- 0.5 * Global.V.n
   attr(Vis.V.n, 'varnames') <- 'VisRad'
   attr(Vis.V.n, 'units') <- 'W_m-2'
-  message('Partitioned global (solar) radiation into only visible.')
   return(Vis.V.n)
   ##value<<
   ## Data vector of visible part of solar radiation (VisRad, W m-2)
@@ -100,7 +96,6 @@ fCalcVPDfromRHandTair <- function(
   VPD.V.n <- 6.1078 * (1 -RH.V.n/100) * exp(17.08085*Tair.V.n/(234.175+Tair.V.n))
   attr(VPD.V.n, 'varnames') <- 'VPD'
   attr(VPD.V.n, 'units') <- 'hPa'
-  message('Calculated VPD from rH and Tair.')
   return(VPD.V.n)
   ##value<<
   ## Data vector of vapour pressure deficit (VPD, hPa)
@@ -120,7 +115,6 @@ fCalcSVPfromTair <- function(
   SVP.V.n <- exp(54.8781919 - 6790.4985 / (Tair.V.n+TZero.c) - 5.02808 * log(Tair.V.n+TZero.c))
   attr(SVP.V.n, 'varnames') <- 'SVP'
   attr(SVP.V.n, 'units') <- 'mbar'
-  message('Calculated SVP (of water) from Tair.')
   return(SVP.V.n)
   ##value<<
   ## Data vector of saturation VP (SVP, mbar)
@@ -142,7 +136,6 @@ fCalcRHfromAVPandTair <- function(
   RH.V.n <- AVP.V.n/SVP.V.n * 100
   attr(RH.V.n, 'varnames') <- 'rH'
   attr(RH.V.n, 'units') <- '%'
-  message('Calculated relative humidity from actual vapour pressure and air tempature.')
   return(RH.V.n)
   ##value<<
   ## Data vector of relative humidity (rH, %)
@@ -162,7 +155,6 @@ fCalcETfromLE <- function(
   ET.V.n <- LE.V.n / ((2.501 - 0.00236 * Tair.V.n) * 18.016)
   attr(ET.V.n, 'varnames') <- 'ET'
   attr(ET.V.n, 'units') <- 'mmol_m-2_s-1'
-  message('Calculated ET from LE and Tair.')
   return(ET.V.n)
   ##value<<
   ## Data vector of evapotranspiration (ET, mmol H20 m-2 s-1)
@@ -174,7 +166,7 @@ fLloydTaylor <- function(
   R_ref.n               ##<< Respiration rate at reference temperature
   ,E_0.n                ##<< Temperature sensitivity ("activation energy") in Kelvin (degK)
   ,Tsoil.n              ##<< Soil temperature in Kelvin (degK)
-  ,T_ref.n=283.15       ##<< Reference temperature of 10 degC in Kelvin (degK)
+  ,T_ref.n=273.15+10    ##<< Reference temperature of 10 degC in Kelvin (degK)
   ,T_0.n=227.13         ##<< Regression temperature as fitted by LloydTaylor (1994) in Kelvin (degK)
   ##author<<
   ## AMM
@@ -187,4 +179,143 @@ fLloydTaylor <- function(
   return(R)
   ##value<<
   ## Data vector of respiration rate
+}
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#+++ Solar radiation properties
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+fCalcSunPosition <- function(
+  ##title<<
+  ## Calculate the position of the sun
+  DoY.V.n               ##<< Data vector with day of year (DoY)
+  ,Hour.V.n             ##<< Data vector with time as decimal hour
+  ,Lat_deg.n            ##<< Latitude in (decimal) degrees
+  ,Long_deg.n           ##<< Longitude in (decimal) degrees
+  ,TimeZone_h.n         ##<< Time zone (in hours)
+  ##author<<
+  ## AMM
+  #TEST: data('Example_DETha98', package='REddyProc'); DoY.V.n <- EddyData.F$DoY; Hour.V.n <- EddyData.F$Hour; 
+  #TEST: Lat_deg.n <- 51.0; Long_deg.n <- 13.6; TimeZone_h.n <- 1.0
+  #TEST: fCalcSunPosition(EddyData.F$DoY, EddyData.F$Hour, Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1.0)
+)
+{
+  # Formulas taken from Alessandro Cescatti's C++ code
+  # Fractional year in radians
+  FracYear_rad.V.n <- 2 * pi * (DoY.V.n-1) / 365.24
+  
+  # Equation of time in hours, accounting for changes in the time of solar noon
+  EqTime_h.V.n <- ( 0.0072*cos(FracYear_rad.V.n) - 0.0528*cos(2*FracYear_rad.V.n) - 0.0012*cos(3*FracYear_rad.V.n) - 0.1229*sin(FracYear_rad.V.n) 
+                    - 0.1565*sin(2*FracYear_rad.V.n) - 0.0041*sin(3*FracYear_rad.V.n) )
+  
+  # Local time in hours
+  LocTime_h.V.n <- (Long_deg.n/15 - TimeZone_h.n)
+  
+  # Solar time
+  # Correction for local time and equation of time
+  FLUXNET.b <- FALSE 
+  SolTime_h.V.n <- if( !FLUXNET.b ) { 
+    # Correction for local time and equation of time
+    Hour.V.n + LocTime_h.V.n + EqTime_h.V.n
+  } else {
+    #! Note: For reproducing values close to Fluxnet Rg_pot which is without local time and eq of time correction
+    #! (CEIP is even different)
+    warning('Solar position calculated without correction for local time and equation of time.')
+    Hour.V.n
+  }
+  # Conversion to radians
+  SolTime_rad.V.n <- (SolTime_h.V.n - 12) * pi / 12.0
+  # Correction for solar time < -pi to positive, important for SolAzim_rad.V.n below
+  SolTime_rad.V.n <- ifelse(SolTime_rad.V.n < -pi, SolTime_rad.V.n+2*pi, SolTime_rad.V.n)
+  attr(SolTime_h.V.n, 'varnames') <- 'SolTime'
+  attr(SolTime_h.V.n, 'units') <- 'hour'
+  
+  #Solar declination in radians, accounting for the earth axis tilt
+  SolDecl_rad.V.n <- ( (0.33281-22.984*cos(FracYear_rad.V.n) - 0.34990*cos(2*FracYear_rad.V.n) - 0.13980*cos(3*FracYear_rad.V.n)
+                        + 3.7872*sin(FracYear_rad.V.n) + 0.03205*sin(2*FracYear_rad.V.n) + 0.07187*sin(3*FracYear_rad.V.n))/180*pi )
+  attr(SolDecl_rad.V.n, 'varnames') <- 'SolDecl'
+  attr(SolDecl_rad.V.n, 'units') <- 'rad'
+  
+  # Solar elevation (vertical, zenithal angle) in radians with zero for horizon
+  SolElev_rad.V.n <-  asin(sin(SolDecl_rad.V.n) * sin(Lat_deg.n/180*pi)
+                           + cos(SolDecl_rad.V.n) * cos(Lat_deg.n/180*pi) * cos(SolTime_rad.V.n))
+  attr(SolElev_rad.V.n, 'varnames') <- 'SolElev'
+  attr(SolElev_rad.V.n, 'units') <- 'rad'
+  
+  # Solar azimuth (horizontal angle) with zero for North
+  SolAzim_cos.V.n <- ( ( cos(SolDecl_rad.V.n) * cos(SolTime_rad.V.n) - sin(SolElev_rad.V.n) * cos(Lat_deg.n/180*pi) )
+                       / ( sin(Lat_deg.n/180*pi) * cos(SolElev_rad.V.n) ) )
+  # Correction if off edge values
+  SolAzim_cos.V.n[SolAzim_cos.V.n > +1] <- 1
+  SolAzim_cos.V.n[SolAzim_cos.V.n < -1] <- 1
+  # Conversion to radians
+  SolAzim_rad.V.n <- acos(SolAzim_cos.V.n)  
+  # Determine if solar azimuth is East or West depending on solar time
+  SolAzim_rad.V.n <- ifelse(SolTime_rad.V.n < 0, pi - SolAzim_rad.V.n, pi + SolAzim_rad.V.n)
+  attr(SolAzim_cos.V.n, 'varnames') <- 'SolAzim'
+  attr(SolAzim_cos.V.n, 'units') <- 'rad'
+  
+  ##value<<
+  ## Data list with the following items:
+  SolPosition.L <- list(
+    SolTime = SolTime_h.V.n     ##<< Solar time (SolTime, hours)
+    ,SolDecl = SolDecl_rad.V.n  ##<< Solar declination (SolDecl, rad)
+    ,SolElev = SolElev_rad.V.n  ##<< Solar elevation with 0 at horizon (SolElev, rad)
+    ,SolAzim = SolAzim_rad.V.n  ##<< Solar azimuth with 0 at North (SolAzim, rad)
+  )
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+fCalcExtRadiation <- function(
+  ##title<<
+  ## Calculate the extraterrestrial solar radiation with the eccentricity correction 
+  DoY.V.n           ##<< Data vector with day of year (DoY)
+  ##author<<
+  ## AMM
+)
+{    
+  # Calculate extraterrestrial solar radiation after Lanini, 2010 (Master thesis, Bern University)
+  # Fractional year in radians
+  FracYear_rad.V.n <- 2*pi*(DoY.V.n-1) /365.24
+  
+  # Total solar irradiance
+  SolarIrr_Wm2.c <- 1366.1 #W/m-2
+  
+  #Eccentricity correction
+  ExtRadiation.V.n <- SolarIrr_Wm2.c * (1.00011 + 0.034221*cos(FracYear_rad.V.n) + 0.00128*sin(FracYear_rad.V.n)
+                                        + 0.000719*cos(2*FracYear_rad.V.n) + 0.000077*sin(2*FracYear_rad.V.n))
+  attr(ExtRadiation.V.n, 'varnames') <- 'ExtRad'
+  attr(ExtRadiation.V.n, 'units') <- 'W_m-2'
+  ExtRadiation.V.n
+  ##value<<
+  ## Data vector of extraterrestrial radiation (ExtRad, W_m-2)
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+fCalcPotRadiation <- function(
+  ##title<<
+  ## Calculate the potential radiation 
+  DoY.V.n             ##<< Data vector with day of year (DoY)
+  ,Hour.V.n           ##<< Data vector with time as decimal hour
+  ,Lat_deg.n          ##<< Latitude in (decimal) degrees
+  ,Long_deg.n         ##<< Longitude in (decimal) degrees
+  ,TimeZone_h.n       ##<< Time zone (in hours)
+  ##author<<
+  ## AMM
+  #For testing PotRadiation(julday,hour)
+)
+{
+  # Calculate potential radiation from solar elevation and extraterrestrial solar radiation
+  SolElev_rad.V.n <- fCalcSunPosition(DoY.V.n, Hour.V.n, Lat_deg.n, Long_deg.n, TimeZone_h.n)$SolElev
+  ExtRadiation.V.n <- fCalcExtRadiation(DoY.V.n)
+  PotRadiation.V.n <- ifelse(SolElev_rad.V.n <= 0, 0, ExtRadiation.V.n * sin(SolElev_rad.V.n) )
+  attr(PotRadiation.V.n, 'varnames') <- 'PotRad'
+  attr(PotRadiation.V.n, 'units') <- attr(ExtRadiation.V.n, 'units')
+  
+  PotRadiation.V.n
+  ##value<<
+  ## Data vector of potential radiation (PotRad, W_m-2)
 }
