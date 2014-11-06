@@ -1,11 +1,16 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#+++ Developers' R script to test eddy processing for various datasets +++
+#+++ Developers' R script +++
+#+++ Various test routines to develop and test code and processing for various datasets
 #+++ --> run from package directory
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Author: AMM
 
 Develop.b <- F #True if in development mode: Load individual scripts, if false test REddyProc as package
+ShortTest.b <- F #Short test only
 LongTest.b <- F #True if in intensive test mode including NC files, all plots and ...
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Load package or source files (development mode)
 
 if (Develop.b) {
   # Source settings for R environment and standard functions
@@ -14,39 +19,62 @@ if (Develop.b) {
   # Source file and data handling scripts
   source('R/DataFunctions.R')
   source('R/FileHandling.R')
+  # Source geo functions
+  source('R/GeoFunctions.R')
   # Initialization of sEddyProc class
   source('R/Eddy.R')
   # sEddyProc methods
   source('R/EddyGapfilling.R')
   source('R/EddyPlotting.R')
-  # Source geo functions
-  source('R/GeoFunctions.R')
-  # Load standard example data from file
-  EddyData.F <- fLoadTXTIntoDataframe('Example_DETha98.txt','inst/examples')
+  source('R/EddyPartitioning.R')
+  # sEddyProc method still in development
+  source('inst/develop/EddyFiltering.R')
+
 } else {
   # Source settings for R environment and standard functions
   source('inst/develop/setREnvir.R')
-  # If needed, generate package
-  #   system('R CMD INSTALL --build --html --library=/Library/Frameworks/R.framework/Versions/current/Resources/library ../REddyProc')
-  #   system('R CMD INSTALL --build --html ../REddyProc')
-  # Requires restart of R console
+  # Generate package from local path
+  ###   system('R CMD INSTALL --build --html --library=/Library/Frameworks/R.framework/Versions/current/Resources/library ../REddyProc')
+  ###   system('R CMD INSTALL --build --html ../REddyProc')
+  # Test installation of package from various sources
+  # Requires restart of R console afterwards!
+  ### R-Forge:  install.packages("REddyProc", repos="http://R-Forge.R-project.org", type="source")
+  ### R-Forge after manual download:  install.packages('../_FromRForge/REddyProc_0.5.tar.gz',  repos = NULL)
+  ### Self generated package:  install.packages('REddyProc_0.5.tgz',  repos = NULL)
   require('REddyProc')
-  # Test to source data
-  data('Example_DETha98')
 }
 
-if( FALSE ) {
-  #Short test
-  data('Example_DETha98')
-  EddyDataWithPosix.F <- fConvertTimeToPosix(EddyData.F, 'YDH', Year.s = 'Year', Day.s = 'DoY', Hour.s = 'Hour')
-  EPTha.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE', 'Rg', 'Tair', 'VPD'))
-  EPTha.C$sMDSGapFill('NEE')
-  View(EPTha.C$sTEMP)
-}
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#Load example data directly from package or (if not available) from txt file
 
-#Packages to source for unit tests
-require(testthat)
+data('Example_DETha98', package='REddyProc')
+if( sum(grepl('EddyData.F',ls())) == 0 ) {
+  if( file.exists('../examples/Example_DETha98.txt') ) {
+    EddyData.F <- suppressMessages(fLoadTXTIntoDataframe('Example_DETha98.txt','../examples'))
+  } else {
+    message('Unit test directory: ', getwd())
+    message('Workspace: ', ls())
+    stop('test_sEddyProc.R::: Example data could not be loaded.')
+  }
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Run short test
+
+if( ShortTest.b ) {
+  EddyDataWithPosix.F <- fConvertTimeToPosix(EddyData.F, 'YDH', Year.s = 'Year', Day.s = 'DoY', Hour.s = 'Hour')
+  EPTha.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE', 'Rg', 'Tair', 'VPD', 'Ustar'))
+  EPTha.C$sMDSGapFill('NEE')
+  EPTha.C$sMDSGapFill('Tair',FillAll.b=F)
+  EPTha.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1.0)
+  View(EPTha.C$sTEMP)
+  stop('No error but short test only.')
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Run unit tests
+
+require(testthat) #Packages to source for unit tests
 if (Develop.b) {
   test_dir('inst/tests') # works only if R scripts are sourced
 } else {
@@ -54,8 +82,22 @@ if (Develop.b) {
 }
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Testing of ustar filtering
 
+if( FALSE ) { #Short example from above with ustar filtering
+  EddyDataWithPosix.F <- fConvertTimeToPosix(EddyData.F, 'YDH', Year.s = 'Year', Day.s = 'DoY', Hour.s = 'Hour')
+  EPTha.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE', 'Rg', 'Tair', 'VPD', 'Ustar'))
+  EPTha.C$sUstarMM() # Apply filter
+  EPTha.C$sMDSGapFill('NEE','UstarMM_fqc',0) #Use ustar flag
+  EPTha.C$sMDSGapFill('Tair',FillAll.b=F)
+  EPTha.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1.0)
+  View(EPTha.C$sTEMP)
+  stop('No error but short test only.')
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Data handling of standard example data
+
 # Add dummy quality flag for tests
 EddyData.F <- cbind(EddyData.F, QF=structure(rep(c(1,0,1,0,1,0,0,0,0,0),nrow(EddyData.F)/10), units='dummy_unit'))
 # Test calculation of VPD

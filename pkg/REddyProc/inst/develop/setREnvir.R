@@ -1,10 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#+++ Developers' R script to (re-)set user specific R environment +++
+#+++ Developers' R script +++
+#+++ (Re-)set user specific R environment
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Author: AMM
 
 # Remove all objects in R environment (but Develop.b and Testing.b)
-rm(list = ls(all=TRUE)[!ls(all=TRUE) %in% c('Develop.b', 'LongTest.b', 'TestData.F')])
+rm(list = ls(all=TRUE)[!ls(all=TRUE) %in% c('Develop.b', 'LongTest.b', 'ShortTest.b', 'TestData.F')])
 if( sum(grepl('REddyProc', (.packages()))) == 1 )
   detach('package:REddyProc')
 message('Start with empty R environment with REddyProc detached.')
@@ -17,7 +18,8 @@ gc() #garbage collect
 if ( Sys.getenv('HOME') == '/Users/amoffat' ) { 
   setwd('/Users/amoffat/Projects/REddy/REddyProc')
   DirFluxnet.s <- paste('/Volumes/BGI/data/DataStructureMDI/DATA/site/Fluxnet/halfhourly/level5_new_v2/Data/single_sites/')
-# KS
+  DirFluxnet.s <- paste('/Users/amoffat/Data/Fluxnet/level5_new_nc')
+  # KS
 } else if ( Sys.getenv('HOME') == '/Users/ksickel' ) { 
   setwd('/Users/ksickel/REddyProc')
   DirFluxnet.s <- paste('/Volumes/BGI/data/DataStructureMDI/DATA/site/Fluxnet/halfhourly/level5_new_v2/Data/single_sites/')
