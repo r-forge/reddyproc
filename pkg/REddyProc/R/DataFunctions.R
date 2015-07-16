@@ -66,7 +66,7 @@ fConvertTimeToPosix <- function(
     #Set time format
     lTime.V.p <- strptime(paste(lYear.V.n, lDoY.V.n, lHour.V.n, lMin.V.n, sep='-'), format='%Y-%j-%H-%M', tz='GMT')
     if(sum(is.na(lTime.V.p)) > 0)
-      stop(sum(is.na(lTime.V.p)), ' errors in convert YDH to timestamp!')
+      stop(sum(is.na(lTime.V.p)), ' errors in convert YDH to timestamp in rows: ', which(is.na(lTime.V.p)))
     
   } else if (TFormat.s == 'YMDH') {
     if( any(c(Year.s, Month.s, Day.s, Hour.s) == 'none') ) 
@@ -88,7 +88,7 @@ fConvertTimeToPosix <- function(
     #Set time format, important to set time zone to GMT to avoid problems with daylight savings timeshifts
     lTime.V.p <- strptime(paste(lYear.V.n, lMonth.V.n, lDay.V.n, lHour.V.n, lMin.V.n, sep='-'), format='%Y-%m-%d-%H-%M', tz='GMT')
     if(sum(is.na(lTime.V.p)) > 0)
-      stop(sum(is.na(lTime.V.p)), 'time stamps could not be converted!')
+      stop(sum(is.na(lTime.V.p)), ' errors in convert YDH to timestamp in rows: ', which(is.na(lTime.V.p)))
     
   } else if (TFormat.s == 'YMDHM') {
     if( any(c(Year.s, Month.s, Day.s, Hour.s, Min.s) == 'none') )
@@ -112,7 +112,7 @@ fConvertTimeToPosix <- function(
     #Set time format, important to set time zone to GMT to avoid problems with daylight savings timeshifts
     lTime.V.p <- strptime(paste(lYear.V.n, lMonth.V.n, lDay.V.n, lHour.V.n, lMin.V.n, sep='-'), format='%Y-%m-%d-%H-%M', tz='GMT')  
     if(sum(is.na(lTime.V.p)) > 0)
-      stop(sum(is.na(lTime.V.p)), ' time stamps could not be converted!')
+       stop(sum(is.na(lTime.V.p)), ' errors in convert YDH to timestamp in rows: ', which(is.na(lTime.V.p)))
     
   } else {
     stop('Unknown time format ', TFormat.s,'!')
@@ -261,6 +261,66 @@ fExpandToFullYear <- function(
   ##value<<
   ## Expanded time and data vector as data frame
 }
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+fGetBeginOfEddyPeriod <- function(
+		##description<<
+		## Get the begin time of a half-hour period, that is denoted by its end time.
+		Time.V.p                    ##<< Time stamp in POSIXct time format
+		,DTS.n=48L           ##<< Daily time steps
+#TEST: fGetBeginOfEddyPeriod(as.POSIXct(strptime(c("2015-01-01 00:00:00","2015-01-01 00:30:00"), format="%Y-%m-%d %H:%M:%S")) )
+)
+##author<<
+## TW
+{
+	##details<<
+	## The timestamp of an Eddy record denotes the end of a half-hour period.
+	## This function gets the time, half an hour before
+	#
+	# substract halv hour, i.e. 1800seconds, to get start of period
+	Time.V.p-as.integer(24L/DTS.n * 60L * 60L)
+	##value<<
+	## integer vector of length(Time.V.p): of times shifted by half an hour.
+}
+
+fGetEndOfEddyPeriod <- function(
+		##description<<
+		## Get the end time of a half-hour period, that is denoted by its beginning time
+		Time.V.p                    ##<< Time stamp in POSIXct time format
+		,DTS.n=48L           ##<< Daily time steps
+#TEST: fGetEndOfEddyPeriod(as.POSIXct(strptime(c("2014-12-31 23:00:00","2014-12-31 23:30:00"), format="%Y-%m-%d %H:%M:%S")) )
+)
+##author<<
+## TW
+{
+	# add halv hour, i.e. period in seconds, to get start of period
+	Time.V.p+as.integer(24L/DTS.n * 60L * 60L)	
+	##value<<
+	## integer vector of length(Time.V.p): of times shifted by half an hour.
+}
+
+fGetYearOfEddyPeriod <- function(
+		##description<<
+		## get the Year from a POSIXct, with new Year (1.1. 00:00) belongs to the old year.
+		Time.V.p                    ##<< Time stamp in POSIXct time format
+		,DTS.n=48L           ##<< Daily time steps
+#TEST: fGetYearOfEddyPeriod(as.POSIXct(strptime(c("2015-01-01 00:00:00","2015-01-01 00:30:00"), format="%Y-%m-%d %H:%M:%S")) )
+)
+##author<<
+## TW
+{
+	##details<<
+	## The timestamp of an Eddy record denotes the end of a half-hour period.
+	## If the end is NewYear,e.g. 1.1.2015 00:00) the half hour period is still in the old year.
+	#
+	year <- 1900L + as.POSIXlt(fGetBeginOfEddyPeriod(Time.V.p, DTS.n))$year	
+	year
+	##value<<
+	## integer vector of length(Time.V.p): of calendar years
+}
+
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++ Gap/NA conversion
@@ -603,8 +663,8 @@ fSetQF <- function(
   ##description<<
   ## Generate new vector from data and quality flag column.
   Data.F                ##<< Data frame
-  ,Var.s                ##<< Variable to be filled
-  ,QFVar.s              ##<< Quality flag of variable to be filled
+  ,Var.s                ##<< Variable to be filtered
+  ,QFVar.s              ##<< Quality flag of variable to be filtered
   ,QFValue.n            ##<< Numeric value of quality flag for _good_ data, other data is set to missing
   ,CallFunction.s=''    ##<< Name of function called from
 )
