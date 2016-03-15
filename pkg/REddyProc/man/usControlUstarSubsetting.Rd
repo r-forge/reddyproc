@@ -1,8 +1,8 @@
-\name{controlUstarSubsetting}
-\alias{controlUstarSubsetting}
-\title{controlUstarSubsetting}
-\description{Default list of parameters for determining UStar of a single binned series	}
-\usage{controlUstarSubsetting(taClasses = 7, UstarClasses = 20, 
+\name{usControlUstarSubsetting}
+\alias{usControlUstarSubsetting}
+\title{usControlUstarSubsetting}
+\description{Default list of parameters for subsetting the data for uStarThreshold estimation into classes with similar environmental conditions 	}
+\usage{usControlUstarSubsetting(taClasses = 7, UstarClasses = 20, 
     swThr = 10, minRecordsWithinTemp = 100, minRecordsWithinSeason = 160, 
     minRecordsWithinYear = 3000, isUsingOneBigSeasonOnFewRecords = TRUE)}
 \arguments{
@@ -17,11 +17,12 @@
 
 
 
-\author{(Department for Biogeochemical Integration at MPI-BGC, Jena, Germany)}
+\author{TW
+(Department for Biogeochemical Integration at MPI-BGC, Jena, Germany)}
 
 
 
-\seealso{\code{\link{estUstarThresholdSingleFw2Binned}}, \code{\link{controlUstarSubsetting}} }
+\seealso{\code{\link{usEstUstarThresholdSingleFw2Binned}}, \code{\link{usControlUstarSubsetting}} }
 \examples{
-controlUstarSubsetting()
+usControlUstarSubsetting()
 }

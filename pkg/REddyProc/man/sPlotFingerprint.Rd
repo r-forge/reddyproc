@@ -9,7 +9,7 @@ with fingerprint, see also \code{\link{sPlotFingerprintY}}.}
   \item{Var.s}{Variable to plot}
   \item{QFVar.s}{Quality flag of variable to be filled}
   \item{QFValue.n}{Value of quality flag for data to plot}
-  \item{Format.s}{Graphics file format (e.g. 'pdf', 'png') as in \code{\link{sxOpenPlot}}}
+  \item{Format.s}{Graphics file format (e.g. 'pdf', 'png')}
   \item{Dir.s}{Directory for plotting}
 }
 

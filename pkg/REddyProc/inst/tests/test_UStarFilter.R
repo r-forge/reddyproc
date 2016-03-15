@@ -16,9 +16,10 @@ dss <- subset(EddyDataWithPosix.F, DoY >= 150 & DoY <= 250)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-test_that("binUstar classes are correct",{
-	res <- binUstar(dss$NEE, dss$Ustar)
-	UstarClasses <- controlUstarSubsetting()$UstarClasses
+
+test_that(".binUstar classes are correct",{
+	res <- .binUstar(dss$NEE, dss$Ustar)$binAverages
+	UstarClasses <- usControlUstarSubsetting()$UstarClasses
 	Ust_bin_size <- round(nrow(dss)/UstarClasses)
 	expect_true( all(abs(res$nRec[-nrow(res)] - Ust_bin_size) < 60) )
 	# create df of NEE and UStar ordered by Ustar
@@ -33,7 +34,23 @@ test_that("binUstar classes are correct",{
 	expect_that( res[,1:2], equals(tmp1[,-1]))
 })
 
-test_that("estUstarThresholdSingleFw2Binned",{
+test_that(".binUstar example file",{
+			pkgDir <- system.file(package='REddyProc')
+			if( nzchar(pkgDir) ){
+				Dir.s <- paste(pkgDir, 'examples', sep='/')
+				EddyData.F <- ds <- fLoadTXTIntoDataframe('Example_DETha98.txt', Dir.s)
+				EddyDataWithPosix.F <- ds <- fConvertTimeToPosix(EddyData.F, 'YDH', Year.s='Year', Day.s='DoY', Hour.s='Hour')
+				dss <- subset(EddyDataWithPosix.F, DoY >= 150 & DoY <= 250 & Rg<10)
+				(res <- .binUstar(dss$NEE, dss$Ustar)$binAverages)
+				expect_true( nrow(res) >= 18)
+				#(resFW1 <- usEstUstarThresholdSingleFw1Binned(res))
+				#(resFW2 <- usEstUstarThresholdSingleFw2Binned(res))
+			}
+		})
+
+
+
+test_that("usEstUstarThresholdSingleFw2Binned",{
 			# regression test
 			Ust_bins.f <- structure(list(Ust_avg = c(0.276666666666667, 0.326666666666667, 
 									0.341111111111111, 0.363333333333333, 0.384444444444444, 0.401111111111111, 
@@ -48,9 +65,9 @@ test_that("estUstarThresholdSingleFw2Binned",{
 							)), .Names = c("Ust_avg", "NEE_avg"), row.names = c(NA, -20L), class = "data.frame")
 			ctrlUstarEst.l <- list(ustPlateauFwd = 10, ustPlateauBack = 6, plateauCrit = 0.95, 
 							corrCheck = 0.5)
-					#?estUstarThresholdSingleFw2Binned
-			#trace(estUstarThresholdSingleFw2Binned, recover)	# untrace(estUstarThresholdSingleFw2Binned)
-			UstarEst <- estUstarThresholdSingleFw2Binned( Ust_bins.f, ctrlUstarEst.l=ctrlUstarEst.l )
+					#?usEstUstarThresholdSingleFw2Binned
+			#trace(usEstUstarThresholdSingleFw2Binned, recover)	# untrace(usEstUstarThresholdSingleFw2Binned)
+			UstarEst <- usEstUstarThresholdSingleFw2Binned( Ust_bins.f, ctrlUstarEst.l=ctrlUstarEst.l )
 			#plot( NEE_avg ~ Ust_avg , Ust_bins.f);	abline(v=UstarEst)	
 			expect_equal( UstarEst, 0.46, tolerance=0.01 )
 		})
@@ -60,39 +77,74 @@ test_that("sEstUstarThreshold: standard case",{
 			EddyProc.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD','Ustar'))
 			(res <- EddyProc.C$sEstUstarThreshold())
 			expect_equal( res$uStarTh$uStar[1], 0.42, tolerance = 0.01, scale = 1 )	# regresssion test: 0.42 by former run
-			expect_equal( dim(res$UstarSeasonTemp)
-				, c( controlUstarSubsetting()$taClasses,length(unique(createSeasonFactorMonth(EddyProc.C$sDATA$sDateTime))) ))
+			expect_equal( dim(res$tempInSeason)
+				, c( usControlUstarSubsetting()$taClasses,length(unique(usCreateSeasonFactorMonth(EddyProc.C$sDATA$sDateTime))) ))
 		})
+
 
 test_that("sEstUstarThreshold: changing to FW1",{
 			EddyProc.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD','Ustar'))
-			(res <- EddyProc.C$sEstUstarThreshold(fEstimateUStarBinned=estUstarThresholdSingleFw1Binned))
+			(res <- EddyProc.C$sEstUstarThreshold(fEstimateUStarBinned=usEstUstarThresholdSingleFw1Binned))
 			expect_equal( res$uStarTh$uStar[1], 0.34, tolerance = 0.01, scale = 1 )	# regresssion test: 0.42 by former run
-			expect_equal( dim(res$UstarSeasonTemp)
-					, c( controlUstarSubsetting()$taClasses,length(unique(createSeasonFactorMonth(EddyProc.C$sDATA$sDateTime))) ))
+			expect_equal( dim(res$tempInSeason)
+					, c( usControlUstarSubsetting()$taClasses,length(unique(usCreateSeasonFactorMonth(EddyProc.C$sDATA$sDateTime))) ))
 		})
 
-test_that("sEstUstarThreshold: One-big-season",{
-			dsFew <- EddyDataWithPosix.F
-			dsFew$NEE[ -((nrow(dsFew):(nrow(dsFew)-controlUstarSubsetting()$minRecordsWithinYear-1L))) ] <- NA
-			EddyProc.C <- sEddyProc$new('DE-Tha', dsFew, c('NEE','Rg','Tair','VPD','Ustar'))
-			(res <- EddyProc.C$sEstUstarThreshold())
+test_that("sEstUstarThreshold: different seasons",{
+			EddySetups.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD','Ustar'))
+			seasonFactor.v <- usCreateSeasonFactorYdayYear( EddySetups.C$sDATA$sDateTime, starts=data.frame(
+							startyday=c(30,300,45,280),startyear=c(1998,1998,1999,1999) ))
+			expect_warning(	# on too few records
+				resUStar <- EddySetups.C$sEstUstarThreshold(seasonFactor.v=seasonFactor.v )
+			)
+			expect_equal( levels(seasonFactor.v), levels(EddySetups.C$sDATA$season))
+		})
+
+test_that("sEstUstarThreshold: using ChangePointDetection",{
+			EddySetups.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD','Ustar'))
+			(resUStar <- EddySetups.C$sEstUstarThreshold(
+								#ctrlUstarEst.l=usControlUstarEst(isUsingCPT=TRUE)
+								ctrlUstarEst.l=usControlUstarEst(isUsingCPTSeveralT =TRUE)
+			))$uStarTh
+			# CPT does no binning uStar
+			expect_equal( c(0L), as.vector(na.omit(unique(EddySetups.C$sDATA$uStarBin))))
+		})
+
+test_that("sEstUstarThreshold: multi-year and One-big-season",{
+			EddyData.F99 <- EddyData.F		
+			EddyData.F99$Year <- EddyData.F$Year +1
+			EddyDataWithPosix.F99 <- fConvertTimeToPosix(EddyData.F99, 'YDH', Year.s='Year', Day.s='DoY', Hour.s='Hour')
+			#
+			dsAll <- EddyDataWithPosix.F
+			# construct in a way so that that in each seasons there are not enough valid values in 98
+			nRec <- max(usControlUstarSubsetting()$minRecordsWithinSeason, usControlUstarSubsetting()$taClasses*usControlUstarSubsetting()$minRecordsWithinTemp) -50
+			dsAll$seasonFactor <- usCreateSeasonFactorMonthWithinYear(dsAll$DateTime)
+			dsFew <- ddply(dsAll, .(seasonFactor), function(dss){
+				isValid <- usGetValidUstarIndices(dss)
+				if( sum(isValid) >= nRec)
+					dss$NEE[isValid][(nRec):sum(isValid)] <- NA
+				#print(dss$seasonFactor[1])
+				#print(nrow(dss))
+				dss
+			})
+			dsFew$seasonFactor <- NULL
+			dsFew <- arrange(dsFew, DateTime)
+			dsComb <- rbind(dsFew,EddyDataWithPosix.F99)
+			EddyProc.C <- sEddyProc$new('DE-Tha', dsComb, c('NEE','Rg','Tair','VPD','Ustar'))
+			expect_warning(
+			res <- EddyProc.C$sEstUstarThreshold(
+								seasonFactor.v = usCreateSeasonFactorMonthWithinYear(EddyProc.C$sDATA$sDateTime) 								
+								)
+					)					
 			expect_true( all(res$seasonAggregation$seasonAgg == res$seasonAggregation$seasonAgg[1] ))
-			expect_equal( res$uStarTh$uStar[1], 0.37, tolerance = 0.01, scale = 1 )	# regresssion test: 0.42 by former run
+			expect_equal( res$uStarTh$uStar[1], 0.43, tolerance = 0.01, scale = 1 )	# regresssion test: 0.42 by former run
+			res98 <- subset(res$seasonYear, seasonYear==1998)			
+			expect_equal( res98$uStarAggr[1], res98$uStarPooled, tolerance = 0.01, scale = 1 )	# regresssion test: 0.42 by former run
+			res99 <- subset(res$seasonYear, seasonYear==1999)			
+			expect_equal( res99$uStarAggr[1], res99$uStarMaxSeason, tolerance = 0.01, scale = 1 )	# regresssion test: 0.42 by former run
+			expect_equal(EddyProc.C$sDATA$tempBin, res$bins$tempBin)
+			#
+			#EddyProc.C$sPlotNEEVersusUStarForSeason(res$season$season[5])			
 		})
-
-
-
-test_that("distribution multiyear matrix",{
-	EddyData.F99 <- EddyData.F		
-	EddyData.F99$Year <- EddyData.F$Year +1
-	EddyDataWithPosix.F99 <- ds <- fConvertTimeToPosix(rbind(EddyData.F, EddyData.F99), 'YDH', Year.s='Year', Day.s='DoY', Hour.s='Hour')
-	EddyProc.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F99, c('NEE','Rg','Tair','VPD','Ustar'))
-	(res <- EddyProc.C$sEstUstarThresholdDistribution(nSample=3))
-	resYears <- subset(res, aggregationMode=="year")
-	expect_that( nrow(resYears), equals(2) )
-	expect_that( resYears$year, equals(c(1998,1999)) )
-	expect_true( resYears$uStar[1] == resYears$uStar[2]  )		# same estimate, maybe different distribution due to bootstrap
-})
 
 

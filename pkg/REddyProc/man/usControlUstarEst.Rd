@@ -1,8 +1,8 @@
-\name{controlUstarEst}
-\alias{controlUstarEst}
-\title{controlUstarEst}
+\name{usControlUstarEst}
+\alias{usControlUstarEst}
+\title{usControlUstarEst}
 \description{Default list of parameters for determining UStar of a single binned series	}
-\usage{controlUstarEst(ustPlateauFwd = 10, ustPlateauBack = 6, 
+\usage{usControlUstarEst(ustPlateauFwd = 10, ustPlateauBack = 6, 
     plateauCrit = 0.95, corrCheck = 0.5, firstUStarMeanCheck = 0.2, 
     isOmitNoThresholdBins = TRUE, isUsingCPT = FALSE, 
     isUsingCPTSeveralT = FALSE, minValidUStarTempClassesProp = 0.2, 
@@ -23,11 +23,12 @@
 
 
 
-\author{(Department for Biogeochemical Integration at MPI-BGC, Jena, Germany)}
+\author{TW
+(Department for Biogeochemical Integration at MPI-BGC, Jena, Germany)}
 
 
 
-\seealso{\code{\link{estUstarThresholdSingleFw2Binned}}, \code{\link{controlUstarSubsetting}} }
+\seealso{\code{\link{usEstUstarThresholdSingleFw2Binned}}, \code{\link{usControlUstarSubsetting}} }
 \examples{
-controlUstarEst()
+usControlUstarEst()
 }
