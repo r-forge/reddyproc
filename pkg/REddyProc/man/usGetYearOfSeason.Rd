@@ -10,6 +10,7 @@
 
 \value{named integer vector, with names corresponding to seasons}
 
+
 \author{TW
 (Department for Biogeochemical Integration at MPI-BGC, Jena, Germany)}
 
