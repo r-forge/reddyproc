@@ -5,7 +5,7 @@
 \usage{fRegrE0fromShortTerm(NightFlux.V.n, TempVar.V.n, DayCounter.V.i, 
     WinDays.i = 7, DayStep.i = 5, TempRange.n = 5, 
     Trim.n = 5, NumE_0.n = 3, MinE_0.n = 30, MaxE_0.n = 450, 
-    CallFunction.s = "", optimAlgorithm = "default")}
+    T_ref.n, CallFunction.s = "", optimAlgorithm = "default")}
 \arguments{
   \item{NightFlux.V.n}{(Original) nighttime ecosystem carbon flux, i.e. respiration vector}
   \item{TempVar.V.n}{(Original) air or soil temperature vector (degC)}
@@ -17,6 +17,8 @@
   \item{NumE_0.n}{Number of best E_0's to average over}
   \item{MinE_0.n}{Minimum E0 for validity check}
   \item{MaxE_0.n}{Maximum E0 for validity check}
+  \item{T_ref.n}{
+}
   \item{CallFunction.s}{Name of function called from}
   \item{optimAlgorithm}{optimization algorithm used (see \code{\link{nls}} ) or 'LM' for Levenberg-Marquard (see nlsLM from package minpack.lm)}
 }

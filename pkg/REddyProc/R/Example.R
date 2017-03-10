@@ -5,16 +5,19 @@ sEddyProc.example <- function( ) {
 	## Dummy function to show code example for sEddyProc provided below
 	##author<<
 	## AMM
-	# Empty function jsut to write attribute with example code for documenation
+	# Empty function just to write attribute with example code for documenation
 } 
 attr(sEddyProc.example,'ex') <- function( ){
 	#+++ Simple example code for using the sEddyProc reference class +++
 	
 	if( FALSE ) { #Do not always execute example code (e.g. on package installation)
+		#library(REddyProc)
 		
 		#+++ Load data with one header and one unit row from (tab-delimited) text file
 		Dir.s <- paste(system.file(package='REddyProc'), 'examples', sep='/')
 		EddyData.F <- fLoadTXTIntoDataframe('Example_DETha98.txt', Dir.s)
+		# note: use \code{fFilterAttr} to subset rows while keeping the units attributes
+		
 		#+++ If not provided, calculate VPD from Tair and rH
 		EddyData.F <- cbind(EddyData.F,VPD=fCalcVPDfromRHandTair(EddyData.F$rH, EddyData.F$Tair))
 		
@@ -24,6 +27,7 @@ attr(sEddyProc.example,'ex') <- function( ){
 		#+++ Initalize R5 reference class sEddyProc for processing of eddy data
 		#+++ with all variables needed for processing later
 		EddyProc.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD', 'Ustar'))
+		EddyProc.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
 		
 		#+++ Generate plots of all data in directory \plots (of current R working dir)
 		EddyProc.C$sPlotHHFluxes('NEE')
@@ -44,11 +48,17 @@ attr(sEddyProc.example,'ex') <- function( ){
 		
 		#+++ Partition NEE into GPP and respiration
 		EddyProc.C$sMDSGapFill('Tair', FillAll.b=FALSE)  	# Gap-filled Tair (and NEE) needed for partitioning 
-		EddyProc.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
+		EddyProc.C$sMDSGapFill('VPD', FillAll.b=FALSE)  	# Gap-filled Tair (and NEE) needed for partitioning 
+		EddyProc.C$sMRFluxPartition()	# night time partitioning -> Reco, GPP
+		EddyProc.C$sGLFluxPartition()	# day time partitioning -> Reco_DT, GPP_DT
+		#EddyProc.C$sGLFluxPartition(controlGLPart.l=partGLControl(isBoundLowerNEEUncertainty=FALSE))	# day time partitioning -> Reco_DT, GPP_DT
+		#plot( EddyProc.C$sTEMP$GPP_DT ~ EddyProc.C$sTEMP$GPP_f); abline(0,1)
+		#plot( -EddyProc.C$sTEMP$GPP_DT + EddyProc.C$sTEMP$Reco_DT ~ EddyProc.C$sTEMP$NEE_f ); abline(0,1)
+		#names(EddyProc.C$sTEMP)
 		# there are some constraints, that might be too strict for some datasets
 		# e.g. in the tropics the required temperature range might be too large.
 		# Its possible to change these constraints
-		#EddyProc.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1, parsE0Regression=list(TempRange.n=2.0, optimAlgorithm="LM")	)  
+		#EddyProc.C$sMRFluxPartition(parsE0Regression=list(TempRange.n=2.0, optimAlgorithm="LM")	)  
 		
 		
 		#+++ Example plots of calculated GPP and respiration 
@@ -59,6 +69,7 @@ attr(sEddyProc.example,'ex') <- function( ){
 		
 		#+++ Processing with ustar filtering before  
 		EddyProc.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD', 'Ustar'))
+		EddyProc.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
 		# estimating the thresholds based on the data
 		(uStarTh <- EddyProc.C$sEstUstarThreshold()$uStarTh)
 		# plot saturation of NEE with UStar for one season
@@ -68,6 +79,7 @@ attr(sEddyProc.example,'ex') <- function( ){
 		EddyProc.C$sMDSGapFillAfterUstar('NEE')
 		colnames(EddyProc.C$sExportResults()) # Note the collumns with suffix _WithUstar	
 		EddyProc.C$sMDSGapFill('Tair', FillAll.b=FALSE)
+		EddyProc.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1, Suffix.s='WithUstar')  # Note suffix
 		EddyProc.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1, Suffix.s='WithUstar')  # Note suffix
 		
 		#+++ Export gap filled and partitioned data to standard data frame
@@ -87,6 +99,7 @@ attr(sEddyProc.example,'ex') <- function( ){
 		
 		#+++ Initialize new sEddyProc processing class
 		EddySetups.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD','Ustar'))
+		EddySetups.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
 		
 		#+++ When running several processing setup, a string suffix declaration is needed
 		#+++ Here: Gap filling with and without ustar threshold
@@ -94,13 +107,15 @@ attr(sEddyProc.example,'ex') <- function( ){
 		EddySetups.C$sMDSGapFillAfterUstar('NEE', FillAll.b=FALSE, UstarThres.df=0.3, UstarSuffix.s='Thres1')
 		EddySetups.C$sMDSGapFillAfterUstar('NEE', FillAll.b=FALSE, UstarThres.df=0.4, UstarSuffix.s='Thres2')
 		EddySetups.C$sMDSGapFill('Tair', FillAll.b=FALSE)    # Gap-filled Tair needed for partitioning
+		EddySetups.C$sMDSGapFill('VPD', FillAll.b=FALSE)    # Gap-filled VPD needed for daytime partitioning
 		colnames(EddySetups.C$sExportResults()) # Note the suffix in output columns
 		
 		#+++ Flux partitioning of the different gap filling setups
-		EddySetups.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1, Suffix.s='NoUstar')
-		EddySetups.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1, Suffix.s='Thres1')
-		EddySetups.C$sMRFluxPartition(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1, Suffix.s='Thres2')
-		colnames(EddySetups.C$sExportResults())	# Note the suffix in output columns also in GPP and Reco
+		EddySetups.C$sMRFluxPartition(Suffix.s='NoUstar')
+		EddySetups.C$sMRFluxPartition(Suffix.s='Thres1')
+		EddySetups.C$sMRFluxPartition(Suffix.s='Thres2')
+		EddySetups.C$sGLFluxPartition(Suffix.s='NoUstar')
+		colnames(EddySetups.C$sExportResults()) # Note the suffix in output columns also of GPP, Reco, GPP_DT, and Reco_DT
 		
 		#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		# Example 2 for advanced users: Extended usage of the gap filling algorithm
@@ -115,6 +130,7 @@ attr(sEddyProc.example,'ex') <- function( ){
 		#+++ Initialize new sEddyProc processing class with more columns
 		EddyTest.C <- sEddyProc$new('DE-Tha', cbind(EddyDataWithPosix.F, Step=Step.V.n, QF=QF.V.n), 
 				c('NEE', 'LE', 'H', 'Rg', 'Tair', 'Tsoil', 'rH', 'VPD', 'QF', 'Step'))
+		EddyTest.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
 		
 		#+++ Gap fill variable with (non-default) variables and limits including preselection of data with quality flag QF==0 
 		EddyTest.C$sMDSGapFill('LE', QFVar.s='QF', QFValue.n=0, V1.s='Rg', T1.n=30, V2.s='Tsoil', T2.n=2, 'Step', 0.1)
@@ -133,6 +149,7 @@ attr(sEddyProc.example,'ex') <- function( ){
 		
 		#+++ Initialize new sEddyProc processing class
 		EddyTestMDS.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE', 'Rg', 'Tair', 'VPD'))
+		EddyTestMDS.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
 		#Initialize 'NEE' as variable to fill
 		EddyTestMDS.C$sFillInit('NEE')
 		# Set variables and tolerance intervals
@@ -166,13 +183,16 @@ attr(sEddyProc.example,'ex') <- function( ){
 		
 		#+++ Provide a single user-defined uStarThreshold
 		EddySetups.C <- sEddyProc$new('DE-Tha', EddyDataWithPosix.F, c('NEE','Rg','Tair','VPD','Ustar'))
+		EddySetups.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)  #Location of DE-Tharandt
 		Ustar.V.n <- 0.46  
 		EddySetups.C$sMDSGapFillAfterUstar('NEE', UstarThres.df=Ustar.V.n)
 		
-		# See vignette DEGebExample for
+		# Type 'vignette(DEGebExample)' to view an example
 		#  - using tailored seasons of differing uStar dynamics with vegetation changes (crop)
 		#  - using seasonal instead of annual uStar threshold estimates in gapfilling
 		#  - Bootstrapping uncertainty associated with uStar Threshold estimation
 		#  - Using change point detection instead of moving point method
+		# The vignette is only available if REddyProc was installed from binary package.
+		# A version can be seen at https://github.com/bgctw/REddyProc/blob/master/vignettes/DEGebExample.md
 	}
 }

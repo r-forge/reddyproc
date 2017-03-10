@@ -5,7 +5,8 @@
 \usage{sMRFluxPartition(FluxVar.s = "NEE_f", QFFluxVar.s = "NEE_fqc", 
     QFFluxValue.n = 0, TempVar.s = "Tair_f", QFTempVar.s = "Tair_fqc", 
     QFTempValue.n = 0, RadVar.s = "Rg", Lat_deg.n, 
-    Long_deg.n, TimeZone_h.n, Suffix.s = "", debug.l = list(useLocaltime.b = FALSE), 
+    Long_deg.n, TimeZone_h.n, T_ref.n = 273.15 + 15, 
+    Suffix.s = "", debug.l = list(useLocaltime.b = FALSE), 
     parsE0Regression = list())}
 \arguments{
   \item{FluxVar.s}{Variable name of column with original and filled net ecosystem fluxes (NEE)}
@@ -18,6 +19,7 @@
   \item{Lat_deg.n}{Latitude in (decimal) degrees}
   \item{Long_deg.n}{Longitude in (decimal) degrees}
   \item{TimeZone_h.n}{Time zone (in hours)}
+  \item{T_ref.n}{Reference temperature in Kelvin (degK) used in \code{fLloydTaylor} for regressing Flux and Temperature}
   \item{Suffix.s}{String suffix needed for different processing setups on the same dataset (for explanations see below)}
   \item{debug.l}{List with debugging control (passed also to \code{\link{sRegrE0fromShortTerm}}.\describe{
 \item{useLocaltime.b}{see details on solar vs local time}

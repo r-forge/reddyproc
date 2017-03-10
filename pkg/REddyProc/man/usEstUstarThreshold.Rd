@@ -1,6 +1,6 @@
 \name{usEstUstarThreshold}
 \alias{usEstUstarThreshold}
-\title{sEddyProc$sEstUstarThreshold - Estimating ustar threshold}
+\title{usEstUstarThreshold - Estimating ustar threshold}
 \description{Estimate the Ustar threshold by aggregating the estimates for seasonal and temperature subsets.}
 \usage{usEstUstarThreshold(ds, seasonFactor.v = usCreateSeasonFactorMonth(ds$sDateTime), 
     seasonFactorsYear = usGetYearOfSeason(seasonFactor.v, 
@@ -44,6 +44,8 @@ This function is called by
 \item{ \code{\link{sEstUstarThreshold}} which stores the result in the class variables (sUSTAR and sDATA).}
 \item{ \code{\link{sEstUstarThresholdDistribution}} which additionally estimates median and confidence intervals for each year by bootstrapping the original data within seasons.}
 } 
+
+For inspecting the NEE~uStar relationship plotting is provided by \code{\link{sPlotNEEVersusUStarForSeason}}
 
 \describe{\item{change point detection (CPT) method}{
 With specifying \code{ctrlUstarEst.l=usControlUstarEst(isUsingCPTSeveralT=TRUE)}

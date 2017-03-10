@@ -7,6 +7,8 @@ context("sEddyProc-Class partitioning")
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+if( !exists(".binUstar") ) .binUstar <- REddyProc:::.binUstar
+
 #Load example data directly from package or (if not available) from txt file
 data('Example_DETha98', package='REddyProc')
 if( sum(grepl('EddyData.F',ls())) == 0 ) {
@@ -58,12 +60,12 @@ test_that("fOptimSingleE0",{
 					0.32, 0.8, 1.01, -0.41, 2.52, 0.36, 0.33, 0.57, -0.06, 0.82, 
 					8.82, -0.04, -3.96, -0.53, 2.75, 1.45, -0.39, -2.06, 0.03, 0.18, 
 					-1.21, 2.44, 0.49, 0.05, -0.17, 2.93, 4.77, 1.85, -0.35)
-			res <- fOptimSingleE0( NEEnight.V.n, Temp_degK.V.n, recoverOnError=TRUE)
+			res <- fOptimSingleE0( NEEnight.V.n, Temp_degK.V.n,T_ref.n=273.15+15, recoverOnError=TRUE)
 			expect_true( is.numeric(res) )
 			expect_true( length(res)> 1 )
 			expect_true( all(is.finite(res) ))
 			
-			resL <- fOptimSingleE0_Lev( NEEnight.V.n, Temp_degK.V.n, recoverOnError=TRUE)
+			resL <- fOptimSingleE0_Lev( NEEnight.V.n, Temp_degK.V.n,T_ref.n=273.15+15, recoverOnError=TRUE)
 			expect_true( is.numeric(res) )
 			expect_true( length(res)> 1 )
 			expect_true( all(is.finite(res) ))
@@ -90,7 +92,7 @@ test_that("fRegrE0fromShortTerm",{
 			#plot(NightFlux.V.n ~ 	rep(TempVar.V.n,3) )		
 			DayCounter.V.i <- rep(1:300, each=5) [ 1:length(NightFlux.V.n)]
 			#trace(fRegrE0fromShortTerm,recover)		#untrace(fRegrE0fromShortTerm)
-			E0 <- fRegrE0fromShortTerm( NightFlux.V.n, rep(TempVar.V.n,3), DayCounter.V.i )
+			E0 <- fRegrE0fromShortTerm( NightFlux.V.n, rep(TempVar.V.n,3), DayCounter.V.i, T_ref.n=273.15+15 )
 			expect_equal( E0, 300, tolerance=15, scale=1 )
 			#
 			#EddyHour.C$sMRFluxPartition( Lat_deg.n=51, Long_deg.n=7, TimeZone_h.n=1 )   
@@ -99,7 +101,8 @@ test_that("fRegrE0fromShortTerm",{
 		
 		
 test_that("sMRFluxPartition Standard",{
-            EddyHour.C$sMRFluxPartition( Lat_deg.n=51, Long_deg.n=7, TimeZone_h.n=1 )   
+			EddyHour.C$sSetLocationInfo(Lat_deg.n=51, Long_deg.n=7, TimeZone_h.n=1)
+            EddyHour.C$sMRFluxPartition()   
             expect_that( EddyHour.C$sTEMP$E_0[1], equals(133.7, tolerance = .1))
         })
 
@@ -108,6 +111,7 @@ test_that("Using fixed E0",{
             E0 <- 120
             #EddyHour.C$trace("sMRFluxPartition", recover )            # EddyHour.C$untrace("sMRFluxPartition")
 			EddyHour.C$sTEMP$E_0 <- NULL
+			EddyHour.C$sSetLocationInfo(Lat_deg.n=51.0, Long_deg.n=13.6, TimeZone_h.n=1)
 			# warning on duplicted columns with former test
 			suppressWarnings( EddyHour.C$sMRFluxPartition( Lat_deg.n=51, Long_deg.n=7, TimeZone_h.n=1, debug.l=list(fixedE0=E0) ))   # calling sRegrE0fromShortTerm
             expect_equal( EddyHour.C$sTEMP$E_0[1], E0, tolerance=1e-6)

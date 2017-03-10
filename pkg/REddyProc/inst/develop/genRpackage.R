@@ -8,6 +8,7 @@
 
 Develop.b <- F #True if in development mode
 
+
 # Source settings for R environment
 source('inst/develop/setREnvir.R')
 
@@ -70,6 +71,7 @@ file.copy(paste('inst/develop/genDocu',DocuIn.V.s,sep='/'),'man', overwrite=T)
 if ( length(grep( "twutz", Sys.getenv('HOME'))) != 0 ) { 
   genRd(execInlinedocs = FALSE)
 }
+#dos2unix man/*.Rd
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
